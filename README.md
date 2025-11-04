@@ -4,13 +4,13 @@
 
 *Monitor rental listings from Funda, Pararius, and more — with Telegram alerts.*
 
-__*Having gained over 1000 users in the first months*__
+__*Gained over 1000 users in the first months*__
 
 __*Open-sourced on November 1st, 2025*__
 
 ---
 
-> *The project has not been taken care of for several months. If the project gets more traction in the form of stars, then I will consider updating and improving this project. This project requires regular maintenance, as it might break for specific websites if the structure changes.*
+> *This project has been inactive for a few months. The bot remains available on Telegram, and I will occasionally fix bugs as they arise. If the project gets more traction in the form of stars, then I will consider updating and improving this project. This project requires regular maintenance, as it might break for specific websites if the structure changes.*
 
 ---
 
@@ -75,6 +75,12 @@ python main_telegram.py
 ```
 
 Run the **scraper** (in another terminal):
+
+```bash
+python cli.py --sources funda,pararius --interval 3600
+```
+
+or if you want city specific scraping:
 
 ```bash
 python cli.py --sources funda,pararius --cities amsterdam,rotterdam --interval 3600

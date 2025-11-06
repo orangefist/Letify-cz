@@ -166,7 +166,7 @@ class TelegramRealEstateBot:
             min_area = f"{preferences.get('min_area')} m²" if preferences.get('min_area') is not None else "Not set"
             max_area = "No limit" if preferences.get('max_area') == 0 else f"{preferences.get('max_area')} m²" if preferences.get('max_area') is not None else "Not set"
             property_type = ', '.join([pref.capitalize() for pref in (preferences.get('property_type', []))]) if preferences.get('property_type') else "Not set"
-            last_update = preferences.get('updated_at').strftime('%Y-%m-%d %H:%M:%S')
+            last_update = preferences.get('updated_at').strftime('%Y-%m-%d %H:%M:%S') if preferences.get('updated_at') else "Never updated"
 
             menu_text = (
                 "⚙️ Preferences Menu\n\n"

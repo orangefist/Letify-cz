@@ -36,7 +36,7 @@ services:
       - realestate_network
 
   db:
-    image: postgres:15
+    image: postgres:18
     container_name: realestate_db
     environment:
       POSTGRES_USER: ${POSTGRES_USER}

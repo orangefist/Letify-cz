@@ -126,7 +126,7 @@ class TelegramNotificationManager:
                     
                 except telegram.error.Forbidden as e:
                     if "bot was blocked" in str(e).lower():
-                        logger.error(f"User {user_id} has blocked the bot: {e}")
+                        logger.error(f"User {user_id} has blocked the bot: {e}. Proceeding to deactivate the user...")
                         # Deactivate the user
                         self.telegram_db.toggle_user_active(user_id, False)
                         return False

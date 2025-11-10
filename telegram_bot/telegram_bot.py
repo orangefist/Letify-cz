@@ -372,6 +372,11 @@ class TelegramRealEstateBot:
         if len(parts) < 3:
             await query.edit_message_text("❌ Invalid callback data.")
             return
+
+        user = telegram_db.get_user(user_id)
+        
+        if user is None:
+            await self.register_user_action(update)
         
         last_active = telegram_db.get_user_last_active(user_id)
 
@@ -513,6 +518,11 @@ class TelegramRealEstateBot:
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle text messages for menu inputs or general messages"""
         user_id = update.effective_user.id
+        user = telegram_db.get_user(user_id)
+        
+        if user is None:
+            await self.register_user_action(update)
+
         telegram_db.update_user_activity(user_id)
         
         message_text = update.message.text.lower().strip()
@@ -894,20 +904,10 @@ class TelegramRealEstateBot:
         """Handle the /start command"""
         user = update.effective_user
         user_id = user.id
-        is_admin = user_id in self.admin_ids
-        
-        default_reaction_text = (
-            "Interested in {ADDRESS}, please contact me!"
-        )
-        
-        telegram_db.register_user(
-            user_id=user_id,
-            username=user.username,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            is_admin=is_admin,
-            reaction_text=default_reaction_text
-        )
+        user_info = telegram_db.get_user(user_id)
+
+        if user_info is None:
+            await self.register_user_action(update)
         
         welcome_text = (
             f"👋 Hello {user.first_name}! Welcome to the Letify Bot.\n\n"
@@ -1303,6 +1303,24 @@ class TelegramRealEstateBot:
             await self.application.stop()
             await self.application.shutdown()
             logger.info("Bot stopped successfully.")
+
+    async def register_user_action(self, update: Update) -> None:
+        user = update.effective_user
+        user_id = user.id
+        is_admin = user_id in self.admin_ids
+        
+        default_reaction_text = (
+            "Interested in {ADDRESS}, please contact me!"
+        )
+        
+        telegram_db.register_user(
+            user_id=user_id,
+            username=user.username,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            is_admin=is_admin,
+            reaction_text=default_reaction_text
+        )
 
     async def safe_send_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE, text: str) -> None:
         """Safely send a message, falling back to different methods if one fails"""

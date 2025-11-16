@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   scraper:
     build:
@@ -36,7 +34,7 @@ services:
       - realestate_network
 
   db:
-    image: postgres:15
+    image: postgres:18
     container_name: realestate_db
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -45,7 +43,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s

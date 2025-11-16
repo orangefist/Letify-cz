@@ -276,7 +276,7 @@ class TelegramRealEstateBot:
         
         elif state == MENU_STATES['subscription']:
             user = telegram_db.get_user(user_id)
-            status = "Enabled ✅ " if user and user.get('notification_enabled') else "Disabled ❌"
+            status = "Enabled ✅ " if user and user.get('notification_enabled') and user.get('is_active') else "Disabled ❌"
             menu_text = (
                 "🔔 Subscription Menu\n\n"
                 f"Receive notifications: {status}\n\n"
@@ -372,6 +372,11 @@ class TelegramRealEstateBot:
         if len(parts) < 3:
             await query.edit_message_text("❌ Invalid callback data.")
             return
+
+        user = telegram_db.get_user(user_id)
+        
+        if user is None:
+            await self.register_user_action(update)
         
         last_active = telegram_db.get_user_last_active(user_id)
 
@@ -474,10 +479,12 @@ class TelegramRealEstateBot:
         
         elif action == 'sub':
             user = telegram_db.get_user(user_id)
-            if user and user.get('notification_enabled'):
+            if user and user.get('notification_enabled') and user.get('is_active'):
                 logger.debug(f"User {user_id} already subscribed, skipping update")
                 return
             success = telegram_db.toggle_notifications(user_id, True)
+            if success and not user.get('is_active'):
+                telegram_db.toggle_user_active(user_id, True)
             menu_text = (
                 "🔔 Subscription Menu\n\n" +
                 ("Receive notifications: Enabled ✅" if success
@@ -493,7 +500,7 @@ class TelegramRealEstateBot:
         
         elif action == 'unsub':
             user = telegram_db.get_user(user_id)
-            if user and not user.get('notification_enabled'):
+            if user and (not user.get('notification_enabled') or not user.get('is_active')):
                 logger.debug(f"User {user_id} already unsubscribed, skipping update")
                 return
             success = telegram_db.toggle_notifications(user_id, False)
@@ -513,6 +520,11 @@ class TelegramRealEstateBot:
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle text messages for menu inputs or general messages"""
         user_id = update.effective_user.id
+        user = telegram_db.get_user(user_id)
+        
+        if user is None:
+            await self.register_user_action(update)
+
         telegram_db.update_user_activity(user_id)
         
         message_text = update.message.text.lower().strip()
@@ -894,20 +906,10 @@ class TelegramRealEstateBot:
         """Handle the /start command"""
         user = update.effective_user
         user_id = user.id
-        is_admin = user_id in self.admin_ids
-        
-        default_reaction_text = (
-            "Interested in {ADDRESS}, please contact me!"
-        )
-        
-        telegram_db.register_user(
-            user_id=user_id,
-            username=user.username,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            is_admin=is_admin,
-            reaction_text=default_reaction_text
-        )
+        user_info = telegram_db.get_user(user_id)
+
+        if user_info is None:
+            await self.register_user_action(update)
         
         welcome_text = (
             f"👋 Hello {user.first_name}! Welcome to the Letify Bot.\n\n"
@@ -1303,6 +1305,24 @@ class TelegramRealEstateBot:
             await self.application.stop()
             await self.application.shutdown()
             logger.info("Bot stopped successfully.")
+
+    async def register_user_action(self, update: Update) -> None:
+        user = update.effective_user
+        user_id = user.id
+        is_admin = user_id in self.admin_ids
+        
+        default_reaction_text = (
+            "Interested in {ADDRESS}, please contact me!"
+        )
+        
+        telegram_db.register_user(
+            user_id=user_id,
+            username=user.username,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            is_admin=is_admin,
+            reaction_text=default_reaction_text
+        )
 
     async def safe_send_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE, text: str) -> None:
         """Safely send a message, falling back to different methods if one fails"""
